@@ -12,12 +12,12 @@ export class DeviceInfo {
   @Column({type:'varchar', name:'serialNo', length:50, unique:true})
   serialNo:string;
 
-  @Column({type:'varchar', name:'x', default:0})
+  @Column({type:'varchar', name:'x', default:"0.0"})
   x:string;
 
-  @Column({type:'varchar', name:'y', default:0})
+  @Column({type:'varchar', name:'y', default:"0.0"})
   y:string;
 
-  @OneToMany(() => Log, (log) => log.deviceId)
+  @OneToMany(() => Log, (log) => log.device)
   logs: Log[];
 }

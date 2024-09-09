@@ -9,14 +9,14 @@ export class Log {
   @Column({type:'text', name:'content'})
   content:string;
 
-  @Column({type:'tinyint', name:'type'})
-  atteckType:number;
+  @Column({type:'varchar', name:'type', length:10, default:null})
+  attackType:string;
 
   @Column({type:'tinyint', name:'status'})
   isAttack:number;
 
   @ManyToOne(() => DeviceInfo, (device) => device.serialNo)
-  deviceId:DeviceInfo;
+  device:DeviceInfo;
 
   @CreateDateColumn({type:'timestamp'})
   createdAt:Date;
