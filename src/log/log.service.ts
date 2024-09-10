@@ -101,6 +101,12 @@ export class LogService {
               device:device.serialNo,
               attackedTime:moment(column4).format('YYYY-MM-DD hh:mm:ss')
             })
+            client.emit('%isAttacked', { 
+              attack:true,
+              type:column2,
+              device:device.serialNo,
+              attackedTime:moment(column4).format('YYYY-MM-DD hh:mm:ss')
+            });
           }
         })
         // .on('end', () => {
