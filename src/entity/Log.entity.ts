@@ -9,7 +9,7 @@ export class Log {
   @Column({type:'text', name:'content'})
   content:string;
 
-  @Column({type:'varchar', name:'type', length:15, default:null})
+  @Column({type:'varchar', name:'type', length:20, default:null})
   attackType:string;
 
   @Column({type:'tinyint', name:'status'})
