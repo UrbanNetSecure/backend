@@ -32,6 +32,11 @@ export class EventGateway implements OnGatewayInit, OnGatewayConnection, OnGatew
     this.server.emit('%log', result);
   }
 
+  @SubscribeMessage('$ping')
+  ping(client:Socket) {
+    this.server.emit('$ping', `your SocketId is ${client.id}`)
+  }
+
   @SubscribeMessage('$isAttacked')
   async isAttacked(client:Socket) {
     this.logService.processCsvFile('log.csv', client)

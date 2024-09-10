@@ -103,11 +103,6 @@ export class LogService {
             });
           }
         })
-        // .on('end', () => {
-        //   // 모든 CSV 파일 처리 완료 후 클라이언트에 완료 메시지 전송
-        //   client.emit('csvProcessingComplete', 'All rows have been processed.');
-        //   resolve();
-        // })
         .on('error', (error) => {
           // 에러 발생 시 클라이언트에 에러 메시지 전송
           client.emit('%isAttacked', 'Error processing CSV file');
