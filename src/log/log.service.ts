@@ -4,7 +4,13 @@ import { Log } from "src/entity/Log.entity";
 import { Request, Response } from "express";
 import { Between, Repository } from "typeorm";
 import { DeviceInfo } from "src/entity/DeviceInfo.entity";
+import * as fs from 'fs';
+import * as csv from 'csv-parser';
 import * as moment from 'moment';
+import { Socket } from "socket.io";
+import { join } from 'path';
+
+var flag = 0; //csv파일 불러올때 사용
 
 @Injectable()
 export class LogService {
@@ -57,6 +63,57 @@ export class LogService {
       })
     }
     return result;
+  }
+
+  async processCsvFile(fileName: string, client: Socket) {
+    // 업로드된 CSV 파일 경로 설정
+    const filePath = join(process.cwd(), 'uploads', fileName);
+
+    return new Promise<void>((resolve, reject) => {
+      // CSV 파일을 읽기 시작
+      fs.createReadStream(filePath)
+        .pipe(csv({ headers:false}))
+        .on('data', async (row) => {
+          // CSV 파일의 각 행 데이터를 변수에 할당
+          const column1 = row[1];  // content
+          const column2 = row[2];  // attackType
+          const column3 = row[3];  // isAttack
+          const column4 = row[4]; //createdAt
+          const deviceid = row[5]; // deviceId
+
+          const device = await this.deviceInfoRepository.findOneBy({ id:deviceid })
+
+          // 할당된 값을 데이터베이스에 저장
+          const entity = new Log();
+          entity.content = column1;
+          entity.attackType = column2;
+          entity.isAttack = column3;
+          entity.createdAt = column4;
+          entity.device = device;
+          this.logRepository.save(entity);
+
+          // 각 행이 처리될 때마다 클라이언트에 데이터를 실시간 전송
+          if(column3 == 1 && flag != column2 || flag == 0) {
+            flag = column2;//attackType 값 할당
+            console.log({ 
+              attack:true,
+              type:column2,
+              device:device.serialNo,
+              attackedTime:moment(column4).format('YYYY-MM-DD hh:mm:ss')
+            })
+          }
+        })
+        // .on('end', () => {
+        //   // 모든 CSV 파일 처리 완료 후 클라이언트에 완료 메시지 전송
+        //   client.emit('csvProcessingComplete', 'All rows have been processed.');
+        //   resolve();
+        // })
+        .on('error', (error) => {
+          // 에러 발생 시 클라이언트에 에러 메시지 전송
+          client.emit('%isAttacked', 'Error processing CSV file');
+          reject(error);
+        });
+    });
   }
 
   async getAllByIdInWeek(serialNo:string, today:Date, weeksAgo:Date) {

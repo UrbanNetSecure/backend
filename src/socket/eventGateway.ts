@@ -32,6 +32,11 @@ export class EventGateway implements OnGatewayInit, OnGatewayConnection, OnGatew
     this.server.emit('%log', result);
   }
 
+  @SubscribeMessage('$isAttacked')
+  async isAttacked(client:Socket) {
+    this.logService.processCsvFile('log.csv', client)
+  }
+
   @SubscribeMessage('$logData')
   async getAllById(@MessageBody() req:{serialNo:any}) {
     const today = moment().toDate();
@@ -57,8 +62,6 @@ export class EventGateway implements OnGatewayInit, OnGatewayConnection, OnGatew
       // 예시: 월별로 데이터를 그룹화하기 위해 month 기준으로 배열을 만들고 데이터를 분류
       if (!graph[formattedDate]) {
         graph[formattedDate] = [];
-      } else {
-
       }
       graph[formattedDate].push({
         date: formattedDate,
