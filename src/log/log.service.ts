@@ -95,12 +95,6 @@ export class LogService {
           // 각 행이 처리될 때마다 클라이언트에 데이터를 실시간 전송
           if(column3 == 1 && flag != column2 || flag == 0) {
             flag = column2;//attackType 값 할당
-            console.log({ 
-              attack:true,
-              type:column2,
-              device:device.serialNo,
-              attackedTime:moment(column4).format('YYYY-MM-DD hh:mm:ss')
-            })
             client.emit('%isAttacked', { 
               attack:true,
               type:column2,
