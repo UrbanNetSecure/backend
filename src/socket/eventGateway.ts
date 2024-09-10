@@ -8,7 +8,7 @@ import {
   SubscribeMessage,
   MessageBody
 } from '@nestjs/websockets';
-import { Response } from 'express';
+import * as moment from 'moment';
 import { Server, Socket } from 'socket.io';
 import { LogService } from 'src/log/log.service';
 @WebSocketGateway(3001, {
@@ -34,8 +34,43 @@ export class EventGateway implements OnGatewayInit, OnGatewayConnection, OnGatew
 
   @SubscribeMessage('$logData')
   async getAllById(@MessageBody() req:{serialNo:any}) {
-    const result = await this.logService.getAllById(req.serialNo);
-    this.server.emit('%logData', result);
+    const today = moment().toDate();
+    const weeksAgo = moment().subtract(6,'d').hour(0).minute(0).seconds(0).millisecond(0).toDate();
+
+    const result = await this.logService.getAllByIdInWeek(req.serialNo, today, weeksAgo);
+    var donut = {};
+    var graph = {};
+    result.data.forEach((el) => {
+      if(donut[el.attackType] == undefined) {
+        donut[el.attackType] = {
+          count:1
+        }
+      } else {
+        donut[el.attackType].count++
+      }
+    })
+
+    result.data.forEach((el) => {
+      const formattedDate = moment(el.createdAt).format('YYYY-MM-DD'); // MySQL 타임스탬프를 yyyy-MM-dd로 변환
+      const status = el.isAttack;
+    
+      // 예시: 월별로 데이터를 그룹화하기 위해 month 기준으로 배열을 만들고 데이터를 분류
+      if (!graph[formattedDate]) {
+        graph[formattedDate] = [];
+      } else {
+
+      }
+      graph[formattedDate].push({
+        date: formattedDate,
+        status: status,
+      });
+    });
+
+    const resData = {
+      donut,
+      graph
+    }
+    this.server.emit('%logData', resData);
   }
 
   handleDisconnect(client: Socket) {

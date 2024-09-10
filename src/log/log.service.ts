@@ -4,7 +4,7 @@ import { Log } from "src/entity/Log.entity";
 import { Request, Response } from "express";
 import { Between, Repository } from "typeorm";
 import { DeviceInfo } from "src/entity/DeviceInfo.entity";
-const moment = require("moment");
+import * as moment from 'moment';
 
 @Injectable()
 export class LogService {
@@ -59,10 +59,22 @@ export class LogService {
     return result;
   }
 
-  async getAllById(serialNo:string) {
+  async getAllByIdInWeek(serialNo:string, today:Date, weeksAgo:Date) {
     try {
       const device = await this.deviceInfoRepository.findOneBy({ serialNo });
-      return await this.logRepository.findBy({ device });
+      const log = await this.logRepository.find({
+        where:{
+          device,
+          createdAt:Between(
+            weeksAgo,
+            today
+          )
+        }
+      },
+    );
+      return {
+        data:log
+      }
     } catch(err) {
       return {
         msg:'로그 조회중 알 수 없는 에러가 발생했습니다.',
