@@ -6,8 +6,8 @@ export class Log {
   @PrimaryGeneratedColumn({type:'int'})
   id:number;
   
-  @Column({type:'text', name:'content'})
-  content:string;
+  @Column({type:'varchar', name:'ip'})
+  ip:string;
 
   @Column({type:'varchar', name:'type', length:20, default:null})
   attackType:string;

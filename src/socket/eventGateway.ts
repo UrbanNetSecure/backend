@@ -39,7 +39,7 @@ export class EventGateway implements OnGatewayInit, OnGatewayConnection, OnGatew
 
   @SubscribeMessage('$isAttacked')
   async isAttacked(client:Socket) {
-    this.logService.processCsvFile('log.csv', client)
+    this.logService.processCsvFile('log_output.csv', client)
   }
 
   @SubscribeMessage('$logData')
@@ -48,7 +48,7 @@ export class EventGateway implements OnGatewayInit, OnGatewayConnection, OnGatew
     const weeksAgo = moment().subtract(6,'d').hour(0).minute(0).seconds(0).millisecond(0).toDate();
     const result = await this.logService.getAllByIdInWeek(req.serialNo, today, weeksAgo);
     var donut = {};
-    var graph = {};
+    var graph = [];
     var frequency = {};
     var attackPercentage = 0;
     var nonAttackPercentage = 0;
@@ -63,18 +63,42 @@ export class EventGateway implements OnGatewayInit, OnGatewayConnection, OnGatew
       }
     })
 
+    //gpt code===============
+    let attackCnt = 0;
+    let nonAttackCnt = 0;
+    let currentWeekStart = moment(result.data[0].createdAt).startOf('week'); // 첫 번째 데이터의 주 시작 날짜
+
     result.data.forEach((el) => {
-      const formattedDate = moment(el.createdAt).format('YYYY-MM-DD'); // MySQL 타임스탬프를 yyyy-MM-dd로 변환
+      const createdAt = moment(el.createdAt);
       const status = el.isAttack;
-    
-      // 예시: 월별로 데이터를 그룹화하기 위해 month 기준으로 배열을 만들고 데이터를 분류
-      if (!graph[formattedDate]) {
-        graph[formattedDate] = [];
+
+      // 새로운 주로 넘어가면 현재 주의 데이터를 저장하고 다음 주로 이동
+      if (createdAt.isAfter(currentWeekStart.clone().endOf('week'))) {
+        graph.push({
+          weekStart: currentWeekStart.format('YYYY-MM-DD'),
+          attackCnt,
+          nonAttackCnt,
+        });
+
+        // 새로운 주로 초기화
+        attackCnt = 0;
+        nonAttackCnt = 0;
+        currentWeekStart = createdAt.startOf('week');
       }
-      graph[formattedDate].push({
-        date: formattedDate,
-        status: status,
-      });
+
+      // 로그 집계
+      if (status == 1) {
+        attackCnt++;
+      } else {
+        nonAttackCnt++;
+      }
+    });
+
+    // 마지막 주의 데이터 추가
+    graph.push({
+      weekStart: currentWeekStart.format('YYYY-MM-DD'),
+      attackCnt,
+      nonAttackCnt,
     });
 
     result.data.forEach((el) => {
@@ -93,7 +117,8 @@ export class EventGateway implements OnGatewayInit, OnGatewayConnection, OnGatew
     const resData = {
       donut,
       frequency,
-      graph
+      graph,
+      total:result.data.length
     }
     this.server.emit('%logData', resData);
   }

@@ -38,13 +38,13 @@ export class LogService {
     })
   }
 
-  async save(content:string, attackType:string, isAttack:number, serialNo:string) {
+  async save(ip:string, attackType:string, isAttack:number, serialNo:string) {
     const isDevice = await this.deviceInfoRepository.findOneBy({serialNo})
     var result;
     if(isDevice) {
       try {
         this.logRepository.insert({
-          content,
+          ip,
           attackType,
           isAttack,
           device:isDevice
@@ -74,32 +74,30 @@ export class LogService {
       fs.createReadStream(filePath)
         .pipe(csv({ headers:false}))
         .on('data', async (row) => {
-          // CSV 파일의 각 행 데이터를 변수에 할당
-          const column1 = row[1];  // content
-          const column2 = row[2];  // attackType
-          const column3 = row[3];  // isAttack
-          const column4 = row[4]; //createdAt
-          const deviceid = row[5]; // deviceId
-
-          const device = await this.deviceInfoRepository.findOneBy({ id:deviceid })
+          const date = row[0]+' '+row[1]//log_output.csv
+          const ip = row[2]
+          const serialNo = row[3]
+          const isAttack = row[4] == "Normal" ? 0 : 1
+          const attackType = row[5]
+          const device = await this.deviceInfoRepository.findOneBy({ serialNo })
 
           // 할당된 값을 데이터베이스에 저장
           const entity = new Log();
-          entity.content = column1;
-          entity.attackType = column2;
-          entity.isAttack = column3;
-          entity.createdAt = column4;
+          entity.createdAt = moment(date).toDate();
+          entity.attackType = attackType
+          entity.isAttack = isAttack
+          entity.ip = ip
           entity.device = device;
           this.logRepository.save(entity);
 
           // 각 행이 처리될 때마다 클라이언트에 데이터를 실시간 전송
-          if(column3 == 1 && flag != column2 || flag == 0) {
-            flag = column2;//attackType 값 할당
+          if(isAttack == 1 && flag != attackType || flag == 0) {
+            flag = attackType;//attackType 값 할당
             client.emit('%isAttacked', { 
               attack:true,
-              type:column2,
+              type:attackType,
               device:device.serialNo,
-              attackedTime:moment(column4).format('YYYY-MM-DD hh:mm:ss')
+              attackedTime:moment(date).format('YYYY-MM-DD hh:mm:ss')
             });
           }
         })
@@ -211,12 +209,12 @@ export class LogService {
 
 //=============develop(web)================
   async saveDev(req:Request, res:Response) {
-    const { content, attackType, isAttack, serialNo } = req.body;
+    const { ip, attackType, isAttack, serialNo } = req.body;
     const isDevice = await this.deviceInfoRepository.findOneBy({serialNo})
     if(isDevice) {
       try {
         this.logRepository.insert({
-          content,
+          ip,
           attackType,
           isAttack,
           device:isDevice
