@@ -26,6 +26,7 @@
     "@nestjs/platform-socket.io": "^10.4.1",
     "@nestjs/typeorm": "^10.0.2",
     "@nestjs/websockets": "^10.4.1",
+    "csv-parser": "^3.0.0",
     "moment": "^2.30.1",
     "mysql2": "^3.11.0",
     "reflect-metadata": "^0.1.13",

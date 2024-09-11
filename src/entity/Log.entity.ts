@@ -14,6 +14,7 @@ export class Log {
 
   @Column({type:'tinyint', name:'status'})
   isAttack:number;
+  
 
   @ManyToOne(() => DeviceInfo, (device) => device.serialNo)
   device:DeviceInfo;

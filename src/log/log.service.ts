@@ -106,6 +106,7 @@ export class LogService {
           client.emit('%isAttacked', 'Error processing CSV file');
           reject(error);
         });
+        
     });
   }
 
