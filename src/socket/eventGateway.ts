@@ -13,7 +13,8 @@ import { Server, Socket } from 'socket.io';
 import { LogService } from 'src/log/log.service';
 @WebSocketGateway(3001, {
   namespace:"/api/control",
-  transports:['websocket']
+  transports:['websocket'],
+  cors:{origin:"*"}
 })
 //port: 3001, /api/control로 이벤트 보내야함
 //$ : 서버가 듣는 이벤트
@@ -45,7 +46,7 @@ export class EventGateway implements OnGatewayInit, OnGatewayConnection, OnGatew
   @SubscribeMessage('$logData')
   async getAllById(@MessageBody() req:{serialNo:any}) {
     const today = moment().toDate();
-    const weeksAgo = moment().subtract(6,'d').hour(0).minute(0).seconds(0).millisecond(0).toDate();
+    const weeksAgo = moment().subtract(7,'d').hour(0).minute(0).seconds(0).millisecond(0).toDate();
     const result = await this.logService.getAllByIdInWeek(req.serialNo, today, weeksAgo);
     var donut = {};
     var graph = [];
@@ -66,24 +67,24 @@ export class EventGateway implements OnGatewayInit, OnGatewayConnection, OnGatew
     //gpt code===============
     let attackCnt = 0;
     let nonAttackCnt = 0;
-    let currentWeekStart = moment(result.data[0].createdAt).startOf('week'); // 첫 번째 데이터의 주 시작 날짜
+    let currentDayStart = moment(result.data[0].createdAt).startOf('day'); // 첫 번째 데이터의 날짜 시작
 
     result.data.forEach((el) => {
       const createdAt = moment(el.createdAt);
       const status = el.isAttack;
 
-      // 새로운 주로 넘어가면 현재 주의 데이터를 저장하고 다음 주로 이동
-      if (createdAt.isAfter(currentWeekStart.clone().endOf('week'))) {
+      // 새로운 날짜로 넘어가면 현재 날짜의 데이터를 저장하고 다음 날짜로 이동
+      if (createdAt.isAfter(currentDayStart.clone().endOf('day'))) {
         graph.push({
-          weekStart: currentWeekStart.format('YYYY-MM-DD'),
+          dayStart: currentDayStart.format('YYYY-MM-DD'),
           attackCnt,
           nonAttackCnt,
         });
 
-        // 새로운 주로 초기화
+        // 새로운 날짜로 초기화
         attackCnt = 0;
         nonAttackCnt = 0;
-        currentWeekStart = createdAt.startOf('week');
+        currentDayStart = createdAt.startOf('day');
       }
 
       // 로그 집계
@@ -94,13 +95,13 @@ export class EventGateway implements OnGatewayInit, OnGatewayConnection, OnGatew
       }
     });
 
-    // 마지막 주의 데이터 추가
+    // 마지막 날짜의 데이터 추가
     graph.push({
-      weekStart: currentWeekStart.format('YYYY-MM-DD'),
+      dayStart: currentDayStart.format('YYYY-MM-DD'),
       attackCnt,
       nonAttackCnt,
     });
-
+    //gpt code end==================
     result.data.forEach((el) => {
       if(el.isAttack != 0) {
         attackPercentage++;
