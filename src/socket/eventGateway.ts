@@ -34,7 +34,7 @@ export class EventGateway implements OnGatewayInit, OnGatewayConnection, OnGatew
 
   @SubscribeMessage('$ping')
   ping(client:Socket) {
-    this.server.emit('$ping', `your SocketId is ${client.id}`)
+    this.server.emit('%ping', `your SocketId is ${client.id}`)
   }
 
   @SubscribeMessage('$isAttacked')
@@ -46,10 +46,13 @@ export class EventGateway implements OnGatewayInit, OnGatewayConnection, OnGatew
   async getAllById(@MessageBody() req:{serialNo:any}) {
     const today = moment().toDate();
     const weeksAgo = moment().subtract(6,'d').hour(0).minute(0).seconds(0).millisecond(0).toDate();
-
     const result = await this.logService.getAllByIdInWeek(req.serialNo, today, weeksAgo);
     var donut = {};
     var graph = {};
+    var frequency = {};
+    var attackPercentage = 0;
+    var nonAttackPercentage = 0;
+
     result.data.forEach((el) => {
       if(donut[el.attackType] == undefined) {
         donut[el.attackType] = {
@@ -74,8 +77,22 @@ export class EventGateway implements OnGatewayInit, OnGatewayConnection, OnGatew
       });
     });
 
+    result.data.forEach((el) => {
+      if(el.isAttack != 0) {
+        attackPercentage++;
+      } else {
+        nonAttackPercentage++;
+      }
+
+      frequency = {
+        attackPercentage:((attackPercentage * 100)/result.data.length),
+        nonAttackPercentage:((nonAttackPercentage * 100)/result.data.length)
+      }
+    })
+
     const resData = {
       donut,
+      frequency,
       graph
     }
     this.server.emit('%logData', resData);
