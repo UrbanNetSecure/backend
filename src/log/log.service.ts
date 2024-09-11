@@ -98,7 +98,7 @@ export class LogService {
             client.emit('%isAttacked', { 
               attack:true,
               type:column2,
-              device:device.serialNo,
+              device:device.serialNo ? device.serialNo:0,
               attackedTime:moment(column4).format('YYYY-MM-DD hh:mm:ss')
             });
           }
@@ -108,6 +108,7 @@ export class LogService {
           client.emit('%isAttacked', 'Error processing CSV file');
           reject(error);
         });
+        
     });
   }
 
